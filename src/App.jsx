@@ -22,7 +22,12 @@ export default function App() {
   const heading = useRef(null);
   const recorder = useReactionRecorder();
   const next = () => setStage(s => Math.min(5, s + 1));
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); if (stage > 0) heading.current?.focus({ preventScroll: true }); }, [stage]);
+  const resetScroll = () => window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  const finishChapterTransition = definition => {
+    if (definition.opacity !== 1) return;
+    resetScroll();
+    if (stage > 0) heading.current?.focus({ preventScroll: true });
+  };
   useEffect(() => { if (stage === 4) recorder.start(); }, [stage, recorder.start]);
   const toggleMusic = async () => {
     if (musicOn) { music.current.pause(); setMusicOn(false); }
@@ -30,7 +35,7 @@ export default function App() {
   };
   const yes = () => { recorder.finish(); setStage(5); };
   const no = () => { recorder.skip(); setDeclined(true); setStage(5); };
-  return <MotionConfig reducedMotion="user"><div className="app-shell"><div className="paper-grain" aria-hidden="true" /><div className="ambient-petals" aria-hidden="true">{Array.from({ length: 7 }, (_, i) => <i key={i} style={{ left: `${8 + i * 14}%`, animationDelay: `${i * -3}s`, animationDuration: `${18 + i * 2}s` }} />)}</div><header className="site-header"><a href="#" className="brand" onClick={e => e.preventDefault()} aria-label="For you, with love"><Heart size={20} strokeWidth={1.4} /><span>for you, <em>with love.</em></span></a><div className="header-right"><span className="header-dedication">a little something, just for {content.name.toLowerCase()}</span><button className="music-toggle" onClick={toggleMusic} aria-label={musicOn ? 'Mute background music' : 'Play background music'} title={musicMissing ? 'Add public/assets/background-music.mp3 to enable music' : 'Optional background music'} disabled={musicMissing}>{musicOn ? <Volume2 size={17} /> : <VolumeX size={17} />}</button></div></header><main ref={heading} tabIndex={-1} id="main-content"><AnimatePresence mode="wait"><motion.div key={stage} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: .4 }}>
+   return <MotionConfig reducedMotion="user"><div className="app-shell"><div className="paper-grain" aria-hidden="true" /><div className="ambient-petals" aria-hidden="true">{Array.from({ length: 7 }, (_, i) => <i key={i} style={{ left: `${8 + i * 14}%`, animationDelay: `${i * -3}s`, animationDuration: `${18 + i * 2}s` }} />)}</div><header className="site-header"><a href="#" className="brand" onClick={e => e.preventDefault()} aria-label="For you, with love"><Heart size={20} strokeWidth={1.4} /><span>for you, <em>with love.</em></span></a><div className="header-right"><span className="header-dedication">a little something, just for {content.name.toLowerCase()}</span><button className="music-toggle" onClick={toggleMusic} aria-label={musicOn ? 'Mute background music' : 'Play background music'} title={musicMissing ? 'Add public/assets/background-music.mp3 to enable music' : 'Optional background music'} disabled={musicMissing}>{musicOn ? <Volume2 size={17} /> : <VolumeX size={17} />}</button></div></header><main ref={heading} tabIndex={-1} id="main-content"><AnimatePresence mode="wait" onExitComplete={resetScroll}><motion.div key={stage} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: .4 }} onAnimationComplete={finishChapterTransition}>
     {stage === 0 && <CameraGate recorder={recorder} onNext={next} />}
     {stage === 1 && <OpeningChapter onNext={next} />}
     {stage === 2 && <PhotoAnnotations onNext={next} />}

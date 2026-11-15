@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, Sparkles } from 'lucide-react';
 import { content } from '../content';
@@ -6,6 +6,9 @@ import { ChapterHeading, NextButton } from './Shared';
 
 export default function PhotoAnnotations({ onNext }) {
   const [index, setIndex] = useState(0);
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [index]);
   const photo = content.photos[index];
   const last = index === content.photos.length - 1;
   const changePhoto = next => setIndex(next);

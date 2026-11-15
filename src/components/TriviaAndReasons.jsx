@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Heart, Sparkles } from 'lucide-react';
 import { content } from '../content';
@@ -9,6 +9,9 @@ export default function TriviaAndReasons({ onNext }) {
   const [answer, setAnswer] = useState(null);
   const [flipped, setFlipped] = useState([]);
   const [reasons, setReasons] = useState(false);
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [question, reasons]);
   const current = content.trivia[question];
   const correct = answer === current.answer;
   return <section className="chapter-page trivia-page"><ChapterHeading number="03" eyebrow={reasons ? 'THE LITTLE THINGS' : 'A LITTLE US-TRIVIA'} title={reasons ? <>A few of the million reasons<br /><em>I adore you.</em></> : <>How well do you<br /><em>know our little world?</em></>} subtitle={reasons ? 'Pick a little love note. There’s a little truth inside each one.' : 'No scores. No pressure. Just an excuse to make you smile.'} />

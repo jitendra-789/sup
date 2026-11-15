@@ -11,14 +11,20 @@ async function openLetter(page) {
 
 async function reachProposal(page) {
   await page.getByRole('button', { name: 'See yourself through my eyes' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('My favorite view');
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(5);
   await expect(page.locator('.photo-pin')).toHaveCount(0);
   await expect(page.locator('.photo-annotation')).toHaveCount(0);
   await expect(page.locator('.memory-polaroid')).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'A little game, just for us' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Another little memory' }).click();
+  await expect(page.locator('.memory-counter')).toContainText('02');
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(5);
   await page.getByRole('button', { name: 'I saved the cutest for last' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('cutest scene ever');
   await page.getByRole('button', { name: 'A little game, just for us' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('our little world');
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(5);
   await page.getByRole('button', { name: 'A beach at sunset' }).click();
   await expect(page.locator('.quiz-feedback')).toContainText('close second');
   await page.getByRole('button', { name: 'Anywhere with you' }).click();
@@ -27,10 +33,13 @@ async function reachProposal(page) {
   await page.getByRole('button', { name: 'One more little question' }).click();
   await page.getByRole('button', { name: 'Definitely me' }).click();
   await page.getByRole('button', { name: 'There’s more I love about you' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('million reasons');
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(5);
   await page.locator('.reason-card').first().click();
   await expect(page.locator('.reason-card').first()).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'I have something to ask you' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Will you be my forever?');
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(5);
 }
 
 test('complete experience without camera, with trivia and annotations', async ({ page }) => {
