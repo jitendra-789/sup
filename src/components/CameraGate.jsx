@@ -38,6 +38,14 @@ export default function CameraGate({ recorder, onNext: advance }) {
       <span className="collage-bottom handwritten">our story, still unfolding…</span>
     </div>
     <div className="welcome-bottom"><span className="small-heart">♡</span><span>NO RUSH. THE BEST THINGS TAKE A LITTLE TIME.</span><span className="small-heart">♡</span></div>
-    {permissionOpen && <ModalBackdrop><motion.div className="permission-card" role="dialog" aria-modal="true" aria-labelledby="permission-title" initial={{ opacity: 0, y: 25 }} animate={{ opacity: 1, y: 0 }}><div className="icon-circle"><Camera size={25} /></div><span className="eyebrow">THE MAGIC MIRROR</span><h2 id="permission-title">One optional little surprise</h2><p>With your permission, your front camera and microphone will capture your reaction <strong>when you reach the big question</strong>. Recording ends shortly after you say yes (or after 3 minutes).</p><p>You can watch and save it afterward. If private storage is configured, a copy will also be automatically sent to {content.from}. Nothing is recorded during the earlier chapters.</p><label className="consent-check"><input type="checkbox" checked={consented} onChange={e => setConsented(e.target.checked)} /><span>I agree to camera and microphone recording and the optional private upload.</span></label><button className="primary-button" disabled={!consented || recorder.status === 'requesting'} onClick={enable}><Sparkles size={17} />{recorder.status === 'requesting' ? 'Waiting for permission…' : 'Enable the magic mirror'}</button><button className="text-button" onClick={() => { recorder.skip(); onNext(); }}>Continue without recording <span>→</span></button><span className="privacy-caption"><LockKeyhole size={12} /> Entirely optional. Just as special either way.</span></motion.div></ModalBackdrop>}
+    {permissionOpen && <ModalBackdrop><motion.div className="permission-card" role="dialog" aria-modal="true" aria-labelledby="permission-title" initial={{ opacity: 0, y: 25 }} animate={{ opacity: 1, y: 0 }}>
+      <div className="icon-circle"><Camera size={25} /></div>
+      <h2 id="permission-title">A little extra magic?</h2>
+      <label className="consent-check"><input type="checkbox" checked={consented} onChange={e => setConsented(e.target.checked)} />
+        <span>I agree to record my camera and microphone reaction at the final question{import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY ? ` and automatically send a private copy to ${content.from} if I say yes` : ''}.</span>
+      </label>
+      <button className="primary-button" disabled={!consented || recorder.status === 'requesting'} onClick={enable}><Sparkles size={17} />{recorder.status === 'requesting' ? 'Waiting for permission…' : 'Enable the magic mirror'}</button>
+      <button className="text-button" onClick={() => { recorder.skip(); onNext(); }}>Continue without recording <span>→</span></button>
+    </motion.div></ModalBackdrop>}
   </section>;
 }

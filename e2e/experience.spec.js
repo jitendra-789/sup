@@ -11,8 +11,13 @@ async function openLetter(page) {
 
 async function reachProposal(page) {
   await page.getByRole('button', { name: 'See yourself through my eyes' }).click();
-  await page.getByRole('button', { name: 'Read the note for You, in your element' }).click();
-  await expect(page.locator('.photo-annotation')).toContainText('smallest things');
+  await expect(page.locator('.photo-pin')).toHaveCount(0);
+  await expect(page.locator('.photo-annotation')).toHaveCount(0);
+  await expect(page.locator('.memory-polaroid')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'A little game, just for us' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Another little memory' }).click();
+  await page.getByRole('button', { name: 'I saved the cutest for last' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('cutest scene ever');
   await page.getByRole('button', { name: 'A little game, just for us' }).click();
   await page.getByRole('button', { name: 'A beach at sunset' }).click();
   await expect(page.locator('.quiz-feedback')).toContainText('close second');
@@ -72,7 +77,7 @@ test('consented reaction records, finalizes after yes, plays, and downloads', as
   await page.getByRole('button', { name: 'Enable the magic mirror' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('a few words for you');
   await reachProposal(page);
-  await expect(page.locator('.proposal-footnote')).toContainText('recording');
+  await expect(page.locator('.proposal-footnote')).toContainText(/recording/i);
   const started = Date.now();
   await page.getByRole('button', { name: 'YES!' }).click();
   const envelope = page.getByRole('button', { name: 'ONE LAST LITTLE SURPRISE' });
@@ -81,6 +86,7 @@ test('consented reaction records, finalizes after yes, plays, and downloads', as
   await envelope.click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page.locator('video')).toHaveAttribute('src', /^blob:/);
+  await expect(page.locator('video')).toHaveCSS('transform', 'matrix(-1, 0, 0, 1, 0, 0)');
   await expect.poll(() => page.locator('video').evaluate(video => video.readyState)).toBeGreaterThanOrEqual(1);
   const download = page.waitForEvent('download');
   await page.getByRole('link', { name: 'Save video' }).click();
@@ -100,4 +106,35 @@ test('skipping a pending permission request never skips the letter', async ({ pa
   await page.getByRole('button', { name: 'Continue without recording' }).click();
   await page.waitForTimeout(1200);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('a few words for you');
+});
+
+test('real no after 15 seconds discards recording and respects the answer', async ({ page, context }) => {
+  test.setTimeout(45000);
+  await context.grantPermissions(['camera', 'microphone']);
+  await page.addInitScript(() => {
+    const original = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    navigator.mediaDevices.getUserMedia = async constraints => {
+      const stream = await original(constraints);
+      window.testReactionStream = stream;
+      return stream;
+    };
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Open your little surprise' }).click();
+  await page.getByRole('checkbox').check();
+  await page.getByRole('button', { name: 'Enable the magic mirror' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('a few words for you');
+  await reachProposal(page);
+  await expect(page.locator('.proposal-footnote')).toContainText(/recording/i);
+  await expect(page.getByRole('button', { name: 'Is it really a no?' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Let me think' }).click();
+  const started = Date.now();
+  await expect(page.getByRole('button', { name: 'Is it really a no?' })).toBeVisible({ timeout: 18000 });
+  expect(Date.now() - started).toBeGreaterThanOrEqual(14000);
+  await page.getByRole('button', { name: 'Is it really a no?' }).click();
+  await page.getByRole('button', { name: 'Yes, it’s a no' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('being honest');
+  await expect(page.locator('.secret-envelope')).toHaveCount(0);
+  await expect(page.locator('.celebration-icon')).toHaveCount(0);
+  expect(await page.evaluate(() => window.testReactionStream.getTracks().every(track => track.readyState === 'ended'))).toBe(true);
 });

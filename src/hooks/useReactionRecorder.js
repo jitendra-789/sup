@@ -23,6 +23,8 @@ export function useReactionRecorder() {
   const stopTimer = useRef(null);
   const safetyTimer = useRef(null);
   const consent = useRef(false);
+  const deliveryRequested = useRef(false);
+  const savedBlob = useRef(null);
 
   const release = useCallback(() => {
     stream.current?.getTracks().forEach(track => track.stop());
@@ -55,9 +57,13 @@ export function useReactionRecorder() {
         clearTimeout(safetyTimer.current);
         const video = new Blob(chunks, { type: instance.mimeType || chunks[0]?.type || 'video/webm' });
         release();
-        if (mounted.current) {
+        if (mounted.current && consent.current) {
           setStatus(video.size ? 'done' : 'unavailable');
-          if (video.size) { setBlob(video); if (consent.current) void uploadReaction(video); }
+          if (video.size) {
+            savedBlob.current = video;
+            setBlob(video);
+            if (deliveryRequested.current) void uploadReaction(video);
+          }
         }
       };
       instance.onerror = () => { release(); if (mounted.current) setStatus('unavailable'); };
@@ -69,14 +75,27 @@ export function useReactionRecorder() {
   }, [release]);
 
   const finish = useCallback(() => {
-    if (stopTimer.current) return;
+    if (deliveryRequested.current) return;
+    deliveryRequested.current = true;
+    if (savedBlob.current && consent.current) void uploadReaction(savedBlob.current);
     stopTimer.current = setTimeout(() => {
       if (recorder.current?.state === 'recording') recorder.current.stop();
       else release();
     }, 2500);
   }, [release]);
 
-  const skip = useCallback(() => { requestId.current++; consent.current = false; release(); setStatus('skipped'); }, [release]);
+  const skip = useCallback(() => {
+    requestId.current++;
+    consent.current = false;
+    deliveryRequested.current = false;
+    clearTimeout(stopTimer.current);
+    clearTimeout(safetyTimer.current);
+    if (recorder.current?.state === 'recording') recorder.current.stop();
+    savedBlob.current = null;
+    setBlob(null);
+    release();
+    setStatus('skipped');
+  }, [release]);
 
   useEffect(() => {
     mounted.current = true;

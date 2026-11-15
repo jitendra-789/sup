@@ -38,10 +38,10 @@ Audio never autoplays. The header speaker starts optional background music at vo
 
 ## Recording and privacy
 
-- The welcome dialog explicitly asks consent for both recording and optional automatic private delivery. Skipping or denying access never blocks the chapters.
+- The Magic Mirror welcome dialog asks consent for reaction recording and, when configured, automatic private delivery. “Enable the magic mirror” opens the normal browser camera/microphone permission prompt. Skipping or denying access never blocks the chapters. The final playback reveal is not disclosed in advance.
 - Camera/microphone permission is requested at the beginning, but **recording starts only on the proposal chapter**. The browser camera indicator may stay on while the earlier chapters are open because permission keeps the stream ready.
 - The recorder tries `video/mp4;codecs=avc1`, `video/mp4`, `video/webm;codecs=vp9`, and `video/webm`, then the browser default.
-- Yes stops the recording after 2.5 seconds. A three-minute safety limit also stops it if the page stays open. The finalized video is available locally, regardless of upload success.
+- Yes stops the recording after 2.5 seconds and enables private delivery when configured. A three-minute safety limit also stops it if the page stays open, but never uploads before Yes. A confirmed No discards the recording and stops the camera/microphone.
 - Camera access requires **HTTPS** (or localhost). Mobile testing over an ordinary LAN HTTP address will not provide camera access; use an HTTPS deployment or trusted tunnel.
 - iOS may require sharing the file to save to Photos; download can save to Files instead. Native sharing is shown only when supported. The modal uses `playsInline` and native playback controls.
 - Safari / Android may pause or interrupt recording when backgrounded, locked, or during calls. Video cannot be guaranteed under those conditions. Keep the page foregrounded. Streams stop on unmount; the recording is never persisted locally automatically.
@@ -89,6 +89,18 @@ If no Supabase environment variables are configured, remote delivery is simply d
 
 ## Deploy
 
+### Pull recordings to your computer
+
+After a recording appears in Supabase, copy `.env.download.example` to `.env.download.local` and set `SUPABASE_SERVICE_ROLE_KEY` to the project's legacy **service_role** key (a server secret key can also be used). Keep `VITE_SUPABASE_URL` in `.env.local`. The browser publishable/anon key cannot read this private bucket.
+
+```sh
+npm run videos:pull
+```
+
+This downloads root-level MP4/WebM files from `reaction-videos` into the project's `videos/` directory. Run it again to fetch new recordings; existing filenames are skipped and remote originals are never deleted. There is no automatic background sync. `.env.download.local` and `videos/` are excluded from Git. **Never put the private key in a `VITE_` variable, browser code, chat, or frontend deployment settings.** This privileged key is only for running the local script. Local recordings are sensitive; store them securely and respect the recipient's agreed retention preferences.
+
+### Hosting
+
 **Vercel:** import the project; framework Vite; build `npm run build`; output `dist`. Add the two environment variables in project settings and redeploy.
 
 **Netlify:** import the project; build `npm run build`; publish `dist`; set the same environment variables and deploy. No routing rewrites are necessary: chapters are in-memory state, not separate routes.
@@ -109,6 +121,8 @@ Both provide HTTPS. Chapter state and unsaved local recordings reset on refresh 
 - `src/hooks/useReactionRecorder.js`: stream, recorder, cleanup, delayed stop, upload
 
 Reduced-motion preferences disable ambient animation/confetti and the hover dodge. The secondary button remains keyboard reachable and never changes the answer; Yes is always stationary and available. Touch targets, safe-area padding, and dynamic viewport sizing are included.
+
+Memories appear one at a time with previous/next controls; the final photo gets a “cutest scene ever” reveal. After the first playful No-button attempt, a 15-second timer reveals a stationary “Is it really a no? 🙂” option. Confirmation respects a real No with a quiet closing page, without confetti or a reaction upload. Adjust `noButtonDelayMs` in `src/content.js` to change the delay (for example, `10000` for 10 seconds). Cards 3–5 are entries 3–5 of `content.reasons`; the final Yes message is `content.closing`.
 
 ## Before sending
 
